@@ -108,7 +108,7 @@ if st.session_state.logged_in:
     st.subheader("📊 Analyze Your Mental Health Posts")
     try:
         df = pd.read_csv("posts.csv")
-        user_data = df[df['username'] == st.session_state.username]
+        user_data = df
         user_posts = user_data['post_text'].tolist()
         timestamps = user_data['timestamp'].tolist()
 
