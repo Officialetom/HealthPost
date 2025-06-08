@@ -105,34 +105,47 @@ elif choice == "Login":
             st.error("Invalid username or password")
 
 if st.session_state.logged_in:
-    st.subheader("📊 Analyze Your Mental Health Posts")
-    try:
-        uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
-        if uploaded_file is not None:
+    st.subheader("📊 Analyze Mental Health Posts")
+
+    uploaded_file = st.file_uploader("Upload a CSV file (containing posts)", type=["csv"])
+
+    if uploaded_file is not None:
+        try:
             df = pd.read_csv(uploaded_file)
-        user_data = df
-        user_posts = user_data['post_text'].tolist()
-        timestamps = user_data['timestamp'].tolist()
 
-        if st.button("Run Analysis"):
-            if not user_posts:
-                st.warning("No posts found for this user.")
+            if 'post_text' not in df.columns or 'timestamp' not in df.columns:
+                st.error("CSV must include 'post_text' and 'timestamp' columns.")
             else:
-                sentiment, keywords, flagged, recommendation, sentiments = analyze_posts(user_posts)
-                st.write(f"**Sentiment Score:** {sentiment:.2f}")
-                st.write(f"**Top Keywords:** {', '.join([kw[0] for kw in keywords])}")
-                st.write(f"**Flagged:** {'Yes' if flagged else 'No'}")
-                st.write(f"**Recommendation:** {recommendation}")
-                show_sentiment_chart(timestamps, sentiments)
-                log_analysis(st.session_state.username, sentiment, keywords, flagged, recommendation)
+                user_posts = df['post_text'].dropna().tolist()
+                timestamps = df['timestamp'].tolist()
 
-                if st.button("Export Result"):
-                    with open("analysis_result.txt", "w") as file:
-                        file.write(f"User: {st.session_state.username}\n")
-                        file.write(f"Sentiment Score: {sentiment:.2f}\n")
-                        file.write(f"Top Keywords: {', '.join([kw[0] for kw in keywords])}\n")
-                        file.write(f"Flagged: {'Yes' if flagged else 'No'}\n")
-                        file.write(f"Recommendation: {recommendation}\n")
-                    st.success("Result exported to analysis_result.txt")
-    except FileNotFoundError:
-        st.error("posts.csv file not found. Please upload the file.")
+                if st.button("Run Analysis"):
+                    if not user_posts:
+                        st.warning("No posts found in the file.")
+                    else:
+                        sentiment, keywords, flagged, recommendation, sentiments = analyze_posts(user_posts)
+
+                        st.markdown(f"**Sentiment Score:** `{sentiment:.2f}`")
+                        st.markdown(f"**Top Keywords:** {', '.join([kw[0] for kw in keywords])}")
+                        st.markdown(f"**Flagged:** {'🔴 Yes' if flagged else '🟢 No'}")
+                        st.markdown(f"**Recommendation:** _{recommendation}_")
+
+                        show_sentiment_chart(timestamps, sentiments)
+                        log_analysis(st.session_state.username, sentiment, keywords, flagged, recommendation)
+
+                        if st.button("Export Result"):
+                            with open("analysis_result.txt", "w") as file:
+                                file.write(f"User: {st.session_state.username}\n")
+                                file.write(f"Sentiment Score: {sentiment:.2f}\n")
+                                file.write(f"Top Keywords: {', '.join([kw[0] for kw in keywords])}\n")
+                                file.write(f"Flagged: {'Yes' if flagged else 'No'}\n")
+                                file.write(f"Recommendation: {recommendation}\n")
+                            st.success("✅ Result exported to `analysis_result.txt`")
+
+        except Exception as e:
+            st.error(f"Failed to process file: {e}")
+    else:
+        st.info("Please upload a CSV file to begin analysis.")
+
+except FileNotFoundError:
+    st.error("posts.csv file not found. Please upload the file.")
