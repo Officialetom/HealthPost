@@ -107,7 +107,9 @@ elif choice == "Login":
 if st.session_state.logged_in:
     st.subheader("📊 Analyze Your Mental Health Posts")
     try:
-        df = pd.read_csv("posts.csv")
+        uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+        if uploaded_file is not None:
+            df = pd.read_csv(uploaded_file)
         user_data = df
         user_posts = user_data['post_text'].tolist()
         timestamps = user_data['timestamp'].tolist()
